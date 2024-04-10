@@ -1,0 +1,32 @@
+name: Build and Push Latest Images
+on:
+  push:
+    branches: [ "main" ]
+permissions:
+  contents: read
+  packages: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - folder: 01-hello
+            image_name: hello
+          - folder: 02-multistage
+            image_name: multistage
+          - folder: 03-multistage-jlink
+            image_name: multistage-jlink
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build the Docker image
+        run: |
+          cd ${{ folder }}
+          docker build . --tag ${{ image_name }}
+      - name: Log in to registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
+      - name: Push image
+        run: |
+          IMAGE_ID=ghcr.io/${{ github.repository_owner }}/${{image_name}}
+          docker tag ${{ image_name }} $IMAGE_ID:latest
+          docker push $IMAGE_ID:$VERSION
